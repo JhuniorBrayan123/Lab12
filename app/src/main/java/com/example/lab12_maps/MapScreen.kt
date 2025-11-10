@@ -23,7 +23,15 @@ fun MapScreen() {
     val cameraPositionState = rememberCameraPositionState {
         position = com.google.android.gms.maps.model.CameraPosition.fromLatLngZoom(ArequipaLocation, 12f)
     }
-
+    LaunchedEffect(Unit) {
+        cameraPositionState.animate(
+            update = CameraUpdateFactory.newLatLngZoom(
+                LatLng(-16.2520984, -71.6836503),
+                12f
+            ),
+            durationMs = 3000
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Añadir GoogleMap al layout
