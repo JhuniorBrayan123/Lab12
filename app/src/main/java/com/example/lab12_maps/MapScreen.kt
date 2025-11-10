@@ -16,13 +16,23 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen() {
     val context = LocalContext.current
-    val ArequipaLocation = LatLng(-16.4040102, -71.559611) // Arequipa, Perú
+
+    // 📍 Coordenada base
+    val arequipaLocation = LatLng(-16.4040102, -71.559611)
+
+    // 🎥 Estado de cámara
     val cameraPositionState = rememberCameraPositionState {
-        position = com.google.android.gms.maps.model.CameraPosition.fromLatLngZoom(ArequipaLocation, 12f)
+        position = CameraPosition.fromLatLngZoom(arequipaLocation, 12f)
     }
+
+    // 🔄 Estado del tipo de mapa
+    var selectedMapType by remember { mutableStateOf(MapType.NORMAL) }
+
+    // 🎥 Animación inicial de cámara
     LaunchedEffect(Unit) {
         cameraPositionState.animate(
             update = CameraUpdateFactory.newLatLngZoom(
@@ -32,6 +42,7 @@ fun MapScreen() {
             durationMs = 3000
         )
     }
+
     // 📍 Otras ubicaciones
     val locations = listOf(
         LatLng(-16.433415, -71.5442652), // JLByR
@@ -61,14 +72,16 @@ fun MapScreen() {
         LatLng(-16.399299, -71.536721)
     )
 
-
+    // 🗺️ Contenedor principal
     Box(modifier = Modifier.fillMaxSize()) {
-        // Añadir GoogleMap al layout
+
+        // 🗺️ Mapa con tipo dinámico
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState
+            cameraPositionState = cameraPositionState,
+            properties = MapProperties(mapType = selectedMapType)
         ) {
-
+            // 🏔️ Ícono personalizado
             val scaledIcon = BitmapDescriptorFactory.fromBitmap(
                 Bitmap.createScaledBitmap(
                     BitmapFactory.decodeResource(context.resources, R.drawable.montana_icon),
@@ -78,12 +91,14 @@ fun MapScreen() {
                 )
             )
 
-
-            // Añadir marcador en Denver, Colorado
+            // 📍 Marcador principal
             Marker(
-                state = rememberMarkerState(position = ArequipaLocation),
-                title = "Arequipa, Perú"
+                state = rememberMarkerState(position = arequipaLocation),
+                title = "Arequipa, Perú",
+                snippet = "Ciudad Blanca",
+                icon = scaledIcon
             )
+
             // 📍 Varios marcadores
             locations.forEach { location ->
                 Marker(
@@ -91,6 +106,62 @@ fun MapScreen() {
                     title = "Ubicación",
                     snippet = "Punto de interés"
                 )
+            }
+
+            // 🔺 Polígonos
+            Polygon(
+                points = plazaDeArmasPolygon,
+                strokeColor = Color.Red,
+                fillColor = Color.Blue,
+                strokeWidth = 5f
+            )
+            Polygon(
+                points = parqueLambramaniPolygon,
+                strokeColor = Color.Red,
+                fillColor = Color.Blue,
+                strokeWidth = 5f
+            )
+            Polygon(
+                points = mallAventuraPolygon,
+                strokeColor = Color.Red,
+                fillColor = Color.Blue,
+                strokeWidth = 5f
+            )
+        }
+
+        // 🎛️ Menú desplegable para cambiar el tipo de mapa
+        var expanded by remember { mutableStateOf(false) }
+        val opciones = listOf("Normal", "Satélite", "Terreno", "Híbrido")
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        ) {
+            Button(onClick = { expanded = !expanded }) {
+                Text("Tipo de mapa")
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                opciones.forEach { opcion ->
+                    DropdownMenuItem(
+                        text = { Text(opcion) },
+                        onClick = {
+                            selectedMapType = when (opcion) {
+                                "Normal" -> MapType.NORMAL
+                                "Satélite" -> MapType.SATELLITE
+                                "Terreno" -> MapType.TERRAIN
+                                "Híbrido" -> MapType.HYBRID
+                                else -> MapType.NORMAL
+                            }
+                            expanded = false
+                        }
+                    )
+                }
+            }
         }
     }
 }
